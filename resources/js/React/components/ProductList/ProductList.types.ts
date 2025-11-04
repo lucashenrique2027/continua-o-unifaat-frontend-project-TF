@@ -1,6 +1,6 @@
-import { ProductModel } from "@app/js/app.types";
+import { ListApi, ProductModel } from "@app/js/app.types";
 
 export type ProductListProps = {
-    products: ProductModel[] | "error" | undefined;
+    products: ListApi<ProductModel> | "error" | undefined;
     onDelete?: () => void;
 }

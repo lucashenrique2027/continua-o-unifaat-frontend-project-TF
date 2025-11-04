@@ -28,6 +28,8 @@ export type ListApi<T> = {
     limit: number;
     next: number | null;
     count: number;
+    page: number;
+    totalPages: number;
 }
 
 export type ErrorApi = {

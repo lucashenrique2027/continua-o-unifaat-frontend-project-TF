@@ -5,8 +5,11 @@ import ProductCreateForm from "@app/js/React/components/ProductCreateForm/Produc
 import InputText from "../../components/InputText/InputText";
 import { CounterRef } from "../../components/Counter/Counter.types";
 import useListProductsApi from "../../hooks/useListProductsApi";
+import Pagination from "../../components/Pagination/Pagination";
 
 export default function Example() {
+
+    const LIMIT = 10;
 
     const { loading, callProductListApi, productList, total } = useListProductsApi();
 
@@ -19,21 +22,25 @@ export default function Example() {
             return;
         }
 
-        callProductListApi();
+        callProductListApi(0, LIMIT);
 
     }, [page]);
 
     const createProductHandler = () => {
-        callProductListApi();
+        callProductListApi(0, LIMIT);
     }
 
     const deleteProductHandler = () => {
-        callProductListApi();
+        callProductListApi(0, LIMIT);
     }/** */
 
     const changeTextHandler = (value: string) => {
         console.log(value);
         counterRef.current?.set(Number(value));
+    }
+
+    const paginateChangeHandler = (page: number) => {
+        callProductListApi((page - 1) * LIMIT, LIMIT);
     }
 
     const PageContent: React.JSX.Element =
@@ -51,7 +58,13 @@ export default function Example() {
                     {
                         loading ?
                             <i className="fas fa-spinner fa-spin"></i> :
-                            <ProductList products={productList} onDelete={deleteProductHandler} />
+                            (
+                                <div className="d-flex gap-4 flex-column">
+                                    <ProductList products={productList} onDelete={deleteProductHandler} />
+                                    <Pagination data={productList} onChange={paginateChangeHandler} />
+                                </div>
+                            )
+
                     }
                 </div>
             </div>

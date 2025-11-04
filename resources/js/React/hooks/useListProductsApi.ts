@@ -6,7 +6,7 @@ export default function useListProductsApi() {
 
     const [loading, setLoading] = useState<boolean>(false);
 
-    const [dataList, setDataList] = useState<ProductModel[] | "error">();
+    const [dataList, setDataList] = useState<ListApi<ProductModel> | "error">();
 
     const [total, setTotal] = useState<number>();
 
@@ -14,17 +14,18 @@ export default function useListProductsApi() {
         return new Promise((resolve) => {
             setTimeout(() => {
                 resolve("");
-            }, 1000);
+            }, 200);
         });
     }
 
-    const call = async (limit = 15, orderBy = "id,desc") => {
+    const call = async (offset = 0, limit = 15, orderBy = "id,desc") => {
 
         setLoading(true);
 
         const query = new URLSearchParams({
             "orderBy": orderBy,
-            "limit": limit.toString()
+            "limit": limit.toString(),
+            "offset": offset.toString()
         });
 
         await a();
@@ -32,7 +33,7 @@ export default function useListProductsApi() {
         try {
             const { data } = await baseAxios.get<ListApi<ProductModel>>(`api/products?${query}`);
 
-            setDataList(data.rows);
+            setDataList(data);
             setTotal(data.count);
         } catch (error) {
             setDataList("error");

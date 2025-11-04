@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ProductModel } from "@app/js/app.types";
+import { ListApi, ProductModel } from "@app/js/app.types";
 import { formatDate, formatPrice } from "@app/js/services/helpers";
 import productDeleteApi from "@app/js/services/api/productDeleteApi";
 import { ProductListProps } from "./ProductList.types";
@@ -8,7 +8,7 @@ import { ButtonRef } from "../Button/Button.types";
 
 export default function ProductList({ products, onDelete }: ProductListProps) {
 
-    const [data, setData] = useState<ProductModel[] | "error" | undefined>(products);
+    const [data, setData] = useState<ListApi<ProductModel> | "error" | undefined>(products);
 
     const deleteButtonsRef = useRef<Map<number, ButtonRef>>(new Map);
 
@@ -56,13 +56,14 @@ export default function ProductList({ products, onDelete }: ProductListProps) {
         return <div className="alert alert-warning">Erro na API.</div>;
     }
 
+
     return (
         <div>
-            {data.length === 0 ? (
+            {data.rows.length === 0 ? (
                 <div className="alert alert-warning">Nenhum produto encontrado.</div>
             ) : (
                 <div className="row row-cols-1 row-cols-md-2 g-4">
-                    {data.map((product) => {
+                    {data.rows.map((product) => {
                         const id = product.id;
                         return (
                             <div key={id} className="col">

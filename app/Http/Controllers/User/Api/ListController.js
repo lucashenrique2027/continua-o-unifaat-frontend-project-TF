@@ -44,7 +44,9 @@ export default async function ListController(request, response) {
             rows: data,
             count: count,
             limit: limit,
-            next: next
+            next: next,
+            page: Math.floor(offset / limit) + 1,
+            totalPages: Math.max(1, Math.ceil(count / limit))
         });
 
     } catch (error) {
