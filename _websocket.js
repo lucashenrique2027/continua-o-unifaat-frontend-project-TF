@@ -25,15 +25,15 @@ function broadcastJson(payload) {
     broadcastString(message);
 }
 
+// --- Endpoint API (Notify) ---
 // endpoint interno para workers notificarem o WebSocket
 app.post("/notify", (req, res) => {
     const message = req.body;
-    console.log(message);
-    // se vier string crua, manda do jeitinho que veio
+    console.log("Notify recebido:", message);
+    
     if (typeof message === "string") {
         broadcastString(message);
     } else if (message) {
-        // se vier objeto, manda como JSON
         broadcastJson(message);
     }
 
@@ -44,14 +44,14 @@ app.listen(SOCKET_NOTIFY_PORT, () =>
     console.log(`- Web Notify server rodando na porta ${SOCKET_NOTIFY_PORT}`)
 );
 
-// --- WebSocket ---
+// --- WebSocket Principal ---
 
 wss.on("connection", (ws) => {
     console.log(chalk.cyan("Cliente conectado.."));
 
     ws.on("message", (raw) => {
         const text = raw.toString();
-        console.log(chalk.yellow("Do client:"), text);
+        // console.log(chalk.yellow("Do client:"), text); // Descomente se quiser debugar tudo
 
         let data;
         try {
@@ -61,27 +61,38 @@ wss.on("connection", (ws) => {
             return;
         }
 
-        // cliente entrou no chat
+        // 1. Cliente entrou no chat (JOIN)
         if (data.type === "join" && data.name) {
-            // guardar nome no socket (ok em JS)
-            ws.userName = data.name;
-
+            ws.userName = data.name; // Salva no contexto do socket
             broadcastJson({
                 type: "system",
                 text: `${data.name} entrou no chat`,
+                timestamp: new Date().toISOString()
             });
-
             return;
         }
 
-        // mensagem normal de chat
-        if (data.type === "message" && data.name && data.text) {
+        // 2. Mensagem de texto (MESSAGE)
+        if (data.type === "message" && data.text) {
             broadcastJson({
                 type: "message",
-                name: data.name,
+                // Usa o nome enviado ou o salvo no socket, ou 'Anônimo'
+                name: data.name || ws.userName || 'Anônimo', 
                 text: data.text,
+                timestamp: new Date().toISOString()
             });
+            return;
+        }
 
+        // 3. Reação Rápida (REACTION) - NOVO
+        if (data.type === "reaction" && data.content) {
+            console.log(chalk.magenta(`Reação recebida de ${data.name || ws.userName}: ${data.content}`));
+            broadcastJson({
+                type: "reaction",
+                name: data.name || ws.userName || 'Anônimo',
+                content: data.content, // Ex: '👍 Aprovado'
+                timestamp: new Date().toISOString()
+            });
             return;
         }
 
@@ -94,6 +105,7 @@ wss.on("connection", (ws) => {
             broadcastJson({
                 type: "system",
                 text: `${ws.userName} saiu do chat`,
+                timestamp: new Date().toISOString()
             });
         }
     });
