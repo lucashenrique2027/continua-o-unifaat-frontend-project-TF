@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useWebSocket } from "../../hooks/useWebsocket/useWebsocket";
 import { ChatMessage } from "./Chat.types";
 
@@ -16,6 +16,8 @@ export default function Chat() {
     const [joined, setJoined] = useState(false);
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
     const addMessage = (msg: Omit<ChatMessage, "id">) => {
         setMessages((prev) => [...prev, { id: Date.now(), ...msg }]);
@@ -47,7 +49,6 @@ export default function Chat() {
                 return;
             }
 
-            // caso venha algo inesperado
             addMessage({
                 text: String(lastMessage),
                 self: false,
@@ -55,7 +56,6 @@ export default function Chat() {
                 type: "system",
             });
         } catch {
-            // caso o servidor mande algo que não seja JSON
             addMessage({
                 text: lastMessage,
                 self: false,
@@ -64,6 +64,15 @@ export default function Chat() {
             });
         }
     }, [lastMessage, name]);
+
+    useEffect(() => {
+        if (!messagesEndRef.current) return;
+
+        messagesEndRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+        });
+    }, [messages]);
 
     const handleJoin = (e: FormEvent) => {
         e.preventDefault();
@@ -80,21 +89,29 @@ export default function Chat() {
         );
     };
 
-    const handleSend = (e: FormEvent) => {
-        e.preventDefault();
-        const text = input.trim();
-        if (!text || !joined) return;
+    // helper pra enviar qualquer texto (normal ou emoji)
+    const sendChat = (text: string) => {
+        const trimmed = text.trim();
+        if (!trimmed || !joined) return;
 
         sendMessage?.(
             JSON.stringify({
                 type: "message",
                 name,
-                text,
+                text: trimmed,
             }),
         );
+    };
 
+    const handleSend = (e: FormEvent) => {
+        e.preventDefault();
+        sendChat(input);
         setInput("");
     };
+
+    const emojis = ["👍", "👎",];
+
+    const wsReady = status === "open" && joined;
 
     return (
         <div className="row justify-content-center">
@@ -165,8 +182,26 @@ export default function Chat() {
                                     </div>
                                 </div>
                             ))}
+
+                            <div ref={messagesEndRef} />
                         </div>
 
+                        {/* linha de EMOJIs */}
+                        <div className="d-flex flex-wrap gap-2 mb-2">
+                            {emojis.map((emoji) => (
+                                <button
+                                    key={emoji}
+                                    type="button"
+                                    className="btn btn-outline-secondary"
+                                    disabled={!wsReady}
+                                    onClick={() => sendChat(emoji)}
+                                >
+                                    {emoji}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* linha com INPUT + ENVIAR */}
                         <form onSubmit={handleSend} className="d-flex gap-2">
                             <input
                                 className="form-control"
